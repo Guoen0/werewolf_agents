@@ -1,10 +1,7 @@
 from Player import Player, Vote, Speech, Witch
-from agents import Runner, Agent
-import config
-from prompts import prompts
 
 class Room:
-    def __init__(self, players):
+    def __init__(self, players: list[Player]):
         self.players = players
         self.does_witch_have_potion = True
         self.speech_history = []
@@ -41,7 +38,10 @@ class Room:
         
         max_vote_count = max(vote_count.values()) # 最高票数
         max_voted_players = [name for name, count in vote_count.items() if count == max_vote_count] # 最高票数玩家
-        
+
+        # 保证玩家名字是在场的人
+        max_voted_players = [name for name in max_voted_players if name in [player.name for player in self.players]]
+
         if len(max_voted_players) == 1:
             p = self.get_player_by_name(max_voted_players[0])
             if p:
@@ -124,18 +124,22 @@ class Room:
         text = f"法官说：{message}"
         print(text)
         names = [player.name for player in speech_to_players]
-        self.all_history.append({"player":"user", "role":"法官", "think":"", "speech":message, "vote": names, "decision": ""})
+        self.all_history.append({"player":"user", "role":"法官", "think":"", "speech":message, "vote": names, "model": "code"})
         for player in speech_to_players:
             player.history.append({"role": "user","content": text})
     
-    def is_game_over(self):
+    def is_game_over_when(self, when):
+        min_num = 3
+        if when == "night":
+            min_num = 2
+
         is_wolf_alive = False
         for player in self.players:
             if player.role == "狼人":
                 is_wolf_alive = True
                 break
 
-        if is_wolf_alive and len(self.players) > 3:
+        if is_wolf_alive and len(self.players) > min_num:
             return False, "游戏继续"
         else:
             if is_wolf_alive:

@@ -1,4 +1,3 @@
-import config
 from prompts import prompts
 from agents import Agent, Runner
 from pydantic import BaseModel
@@ -20,13 +19,13 @@ class Witch(BaseModel):
 
 # 玩家定义
 class Player:
-    def __init__(self, name, role):
+    def __init__(self, name, role, model):
         self.name = name
         self.role = role
         self.agent = Agent(
             name=name,
             instructions=prompts["GAME_RULE"] + f"\n你是 {name}。" + f"\n你是{role}。",
-            model=config.model,
+            model=model,
         )
         self.history = []
     
@@ -56,14 +55,15 @@ class Player:
         # 更新历史
         if output_type == "Speech":
             speech_history.append({"player":self.name, "speech":result.final_output.speach})
-            all_history.append({"player":self.name, "role":self.role, "think":result.final_output.think, "speech":result.final_output.speach, "vote": "", "decision": ""})
+            all_history.append({"player":self.name, "role":self.role, "think":result.final_output.think, "speech":result.final_output.speach, "vote": "", "model": self.agent.model})
         elif output_type == "Vote":
-            all_history.append({"player":self.name, "role":self.role, "think":result.final_output.think, "speech":"", "vote": result.final_output.target_player_name, "decision": ""})
+            all_history.append({"player":self.name, "role":self.role, "think":result.final_output.think, "speech":"", "vote": result.final_output.target_player_name, "model": self.agent.model})
         elif output_type == "Witch":
             text = ""
             if result.final_output.is_save_someone: text = "救"
             if result.final_output.is_kill_someone: text = "杀"
-            all_history.append({"player":self.name, "role":self.role, "think":result.final_output.think, "speech":"", "vote": result.final_output.target_player_name, "decision": text})
+            text = f"{text} {result.final_output.target_player_name}"
+            all_history.append({"player":self.name, "role":self.role, "think":result.final_output.think, "speech":"", "vote": text, "model": self.agent.model})
         
         print(self.name)
         print(result.final_output)
