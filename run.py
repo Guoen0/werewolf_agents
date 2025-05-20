@@ -1,4 +1,4 @@
-from agents import set_default_openai_key, trace, set_tracing_disabled
+from agents import set_default_openai_key, set_tracing_disabled
 import asyncio
 from Player import Player
 from Room import Room
@@ -6,17 +6,27 @@ import config
 import json
 import random
 from datetime import datetime
+import os
 ########################################################
 # 配置
 ########################################################
+
 set_default_openai_key(config.api_key)
 set_tracing_disabled(True) # no tracing
 
 players_name = ["王大", "刘二", "张三", "赵四", "孙五", "周六", "李七", "郑八"]
 players_role = ["狼人", "预言家", "女巫", "平民", "平民", "平民", "平民", "平民"]
-models = ["gpt-4.1", "gpt-4.1-mini", "gpt-4.1-nano"]
+# 必须选择支持 structured_outputs response_format 的模型
+#models = ["gpt-4.1-nano", "gpt-4.1-mini", "gpt-4.1"]
+models = [
+    "gpt-4.1-nano", "gpt-4.1-mini", "gpt-4.1",
+    "meta-llama/llama-4-maverick",
+    "google/gemini-2.5-flash-preview",
+    "google/gemini-2.5-pro-preview",
+    "mistralai/mistral-medium-3",
+]
 
-arena_runs = 10
+arena_runs = 50
 
 ########################################################
 # Arena
@@ -28,6 +38,8 @@ def game_over(winner_message, room:Room):
 
     # 保存历史
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    if not os.path.exists("history"):
+        os.makedirs("history")
     with open(f"history/history_{timestamp}.json", "w", encoding="utf-8") as f:
         json.dump(room.all_history, f, ensure_ascii=False, indent=2)
 
